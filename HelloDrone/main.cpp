@@ -42,12 +42,12 @@ class __declspec(dllexport) ClientClass
 		}
 };
 
-extern "C" __declspec(dllexport) ClientClass* createClient()
+extern "C" __declspec(dllexport) ClientClass* CreateClientCPP()
 {
 	return new ClientClass();
 }
 
-extern "C" __declspec(dllexport) void disposeClient(ClientClass* pObject)
+extern "C" __declspec(dllexport) void DisposeClientCPP(ClientClass* pObject)
 {
 	if (pObject != NULL)
 	{
@@ -56,53 +56,92 @@ extern "C" __declspec(dllexport) void disposeClient(ClientClass* pObject)
 	}
 }
 
-extern "C" __declspec(dllexport) void confirmConnection(ClientClass* pObject)
+extern "C" __declspec(dllexport) void ConfirmConnectionCPP(ClientClass* pObject)
 {
 	pObject->GetClient()->confirmConnection();
 }
 
-extern "C" __declspec(dllexport) void enableApiControl(ClientClass* pObject)
+extern "C" __declspec(dllexport) void EnableApiControlCPP(ClientClass* pObject)
 {
 	pObject->GetClient()->enableApiControl(true);
 }
 
-extern "C" __declspec(dllexport) void armDisarm(ClientClass* pObject, bool isArm)
+extern "C" __declspec(dllexport) void ArmDisarmCPP(ClientClass* pObject, bool isArm)
 {
 	pObject->GetClient()->armDisarm(isArm);
 }
 
-extern "C" __declspec(dllexport) void takeoff(ClientClass* pObject, float timeout)
+extern "C" __declspec(dllexport) void TakeoffCPP(ClientClass* pObject, float timeout)
 {
 	pObject->GetClient()->takeoff(timeout);
 }
 
-extern "C" __declspec(dllexport) void sleepClient(ClientClass* pObject, float time)
+extern "C" __declspec(dllexport) void SleepClientCPP(ClientClass* pObject, float time)
 {
 	std::this_thread::sleep_for(std::chrono::duration<double>(time));
 }
 
-extern "C" __declspec(dllexport) void hover(ClientClass* pObject)
+extern "C" __declspec(dllexport) void HoverCPP(ClientClass* pObject)
 {
 	pObject->GetClient()->hover();
 }
 
-extern "C" __declspec(dllexport) void moveByVelocityZ(ClientClass* pObject, float speed)
+extern "C" __declspec(dllexport) void MoveByVelocityZCPP(ClientClass* pObject, float speed, float duration)
 {
 	auto position = pObject->GetClient()->getPosition();
 	float z = position.z(); // current position (NED coordinate system).  
 	const float size = 10.0f;
-	const float duration = size / speed;
 	DrivetrainType driveTrain = DrivetrainType::ForwardOnly;
 	YawMode yaw_mode(true, 0);
 	std::cout << "moveByVelocityZ(" << speed << ", 0, " << z << "," << duration << ")" << std::endl;
 	pObject->GetClient()->moveByVelocityZ(speed, 0, z, duration, driveTrain, yaw_mode);
 }
 
-extern "C" __declspec(dllexport) void land(ClientClass* pObject)
+extern "C" __declspec(dllexport) void LandCPP(ClientClass* pObject)
 {
 	pObject->GetClient()->land();
 }
 
+extern "C" __declspec(dllexport) int GetDistanceImageCPP(ClientClass* pObject, float ar[])
+{
+
+	vector<ImageRequest> request = { ImageRequest(0, ImageType::Scene), ImageRequest(1, ImageType::DepthVis, true) };
+	vector<ImageResponse> response = pObject->GetClient()->simGetImages(request);
+	vector<float> x = response[1].image_data_float;
+	int sz = (int)x.size();
+	for (int i = 0; i < sz; ++i)
+	{
+		ar[i] = x[i];
+	}
+	ar[sz] = (float) response[1].width;
+	ar[sz + 1] = (float) response[1].height;
+	return sz;
+}
+
+extern "C" __declspec(dllexport) float GetDistanceCPP(ClientClass* pObject)
+{
+	vector<ImageRequest> request = { ImageRequest(1, ImageType::DepthVis, true) };
+	vector<ImageResponse> response = pObject->GetClient()->simGetImages(request);
+	vector<float> x = response[0].image_data_float;
+	return x[(int)(x.size() / 2) + response[0].width / 2];
+}
+
+extern "C" __declspec(dllexport) void GetPosCPP(ClientClass* pObject, float coord[])
+{
+	Vector3r v = pObject->GetClient()->getPosition();
+	coord[0] = v.x();
+	coord[1] = v.y();
+	coord[2] = v.z();
+}
+
+extern "C" __declspec(dllexport) int GetImageCPP(ClientClass* pObject, int ar[])
+{
+	for (int i = 0; i < 20; ++i)
+	{
+		ar[i] = i;
+	}
+	return 20;
+}
 
 int main() 
 {
